@@ -116,10 +116,22 @@ class SHA256(ABC):
       
             Returns
             -------
-                message : bytes
+                message : hex
                     Message to get the hash of with a lentgh equal to a multiple of the block size
 
             '''
+        # Convert string to hex
+        message = "".join("{:02x}".format(ord(c)) for c in message)
+        
+        initLen = len(message)
+        message += '1'
+        
+        bytesToAdd = self.blockSize - (initLen % self.blockSize) - 1 - 64
+        for _ in range(0, bytesToAdd):
+            message += '0'
+
+        message += '{:0x}'.format(initLen).zfill(64)
+
         return message
 
 
@@ -128,7 +140,7 @@ class SHA256(ABC):
 
             Parameters
             ----------
-                message : str
+                message : hex
                     Message to get the hash of
       
             Returns
@@ -147,7 +159,7 @@ class SHA256(ABC):
 
             Parameters
             ----------
-                chunk : bytes
+                chunk : hex
                     Message to get the hash of
       
             Returns
@@ -209,7 +221,7 @@ class SHA256(ABC):
 
             Returns
             -------
-                hashedMessage : bytes
+                hashedMessage : hex
                     Hash of the message
 
             '''
@@ -281,5 +293,5 @@ class SHA512(SHA256):
 
 if __name__ == '__main__':
     hashMethod = SHA256()
-    hashValue = hashMethod.get_hash('test')
+    hashValue = hashMethod.get_hash('testtesttesttesttest')
     print(hashValue)
