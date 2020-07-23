@@ -58,14 +58,16 @@ class SHA256(ABC):
         self.wordSize = 32
         self.nbCompressions = 64
 
+        self.hexWordLen = int(self.wordSize/4)
+
         self._initialize_hash_values()
         self._initialize_round_constants()
 
 
     def _initialize_hash_values(self):
         ''' Initialize the hash values h0 to h7 '''
-        self.h = [  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-                    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
+        self.h = [  '6a09e667', 'bb67ae85', '3c6ef372', 'a54ff53a',
+                    '510e527f', '9b05688c', '1f83d9ab', '5be0cd19']
 
     
     def _initialize_round_constants(self):
@@ -186,21 +188,21 @@ class SHA256(ABC):
             sigma0 = self._get_sigma0(words[index - 15])
             sigma1 = self._get_sigma1(words[index - 2])
             word = int(words[index-16], base=2) + int(sigma0, base=2) + int(words[index-7], base=2) + int(sigma1, base=2)
-            words[index] = '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+            words[index] = '{:0b}'.format(word).zfill(self.wordSize)[-self.wordSize:]
 
         return words
 
     
     def _get_sigma0(self, word):
         ''' Return the the sigma0 value of the word '''
-        word = int(self._rightrotate(word, 7), base=2) ^ int(self._rightrotate(word, 18), base=2) ^ int(self._rightshift(word, 3), base=2)
-        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+        sigma0 = int(self._rightrotate(word, 7), base=2) ^ int(self._rightrotate(word, 18), base=2) ^ int(self._rightshift(word, 3), base=2)
+        return '{:0b}'.format(sigma0).zfill(self.wordSize)[-self.wordSize:]
 
 
     def _get_sigma1(self, word):
-        ''' Return the the sigma0 value of the word '''
-        word = int(self._rightrotate(word, 17), base=2) ^ int(self._rightrotate(word, 19), base=2) ^ int(self._rightshift(word, 10), base=2)
-        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+        ''' Return the the sigma1 value of the word '''
+        sigma1 = int(self._rightrotate(word, 17), base=2) ^ int(self._rightrotate(word, 19), base=2) ^ int(self._rightshift(word, 10), base=2)
+        return '{:0b}'.format(sigma1).zfill(self.wordSize)[-self.wordSize:]
 
 
     def _rightshift(self, word, n):
@@ -219,7 +221,10 @@ class SHA256(ABC):
                     word shifted n times
 
             '''
-        word = int(word, base=2)
+        try:
+            word = int(word, base=2)
+        except:
+            word = int(word, base=16)
         word = word >> n
         return '{:0b}'.format(word).zfill(self.wordSize)
 
@@ -240,9 +245,12 @@ class SHA256(ABC):
                     word rotated n times
 
             '''
-        word = int(word, base=2)
+        try:
+            word = int(word, base=2)
+        except:
+            word = int(word, base=16)
         word = (word >> n) | (word << (self.wordSize - n))
-        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+        return '{:0b}'.format(word).zfill(self.wordSize)[-self.wordSize:]
 
 
     def _get_working_variables(self):
@@ -274,7 +282,50 @@ class SHA256(ABC):
                     List containing the current hash values
 
             '''
+        for index in range(len(words)):
+            Sigma1 = self._get_Sigma1(wh[4])
+            ch = self._get_ch(wh[4], wh[5], wh[6])
+            temp1 = int(wh[7], base=16) + int(Sigma1, base=2) + int(ch, base=2) + int(self.k[index]) + int(words[index], base=2)
+            Sigma0 = self._get_Sigma0(wh[0])
+            maj = self._get_maj(wh[0], wh[1], wh[2])
+            temp2 = int(Sigma0, base=2) + int(maj, base=2)
+
+            wh[7] = wh[6]
+            wh[6] = wh[5]
+            wh[5] = wh[4]
+            e = int(wh[7], base=16) + temp1
+            wh[4] = '{:0x}'.format(e).zfill(self.hexWordLen)[-self.hexWordLen:]
+            wh[3] = wh[2]
+            wh[2] = wh[1]
+            wh[1] = wh[0]
+            a = temp1 + temp2
+            wh[0] = '{:0x}'.format(a).zfill(self.hexWordLen)[-self.hexWordLen:]
+
         return wh
+
+
+    def _get_Sigma0(self, a):
+        ''' Return the the Sigma0 value of a '''
+        Sigma0 = int(self._rightrotate(a, 2), base=2) ^ int(self._rightrotate(a, 13), base=2) ^ int(self._rightrotate(a, 22), base=2)
+        return '{:0b}'.format(Sigma0).zfill(self.wordSize)[-self.wordSize:]
+
+
+    def _get_Sigma1(self, e):
+        ''' Return the the Sigma1 value of e '''
+        Sigma1 = int(self._rightrotate(e, 6), base=2) ^ int(self._rightrotate(e, 11), base=2) ^ int(self._rightrotate(e, 25), base=2)
+        return '{:0b}'.format(Sigma1).zfill(self.wordSize)[-self.wordSize:]
+
+    
+    def _get_ch(self, e, f, g):
+        ''' Return the the ch value of e, f, g '''
+        ch = (int(e, base=16) & int(f, base=16)) ^ (~int(e, base=16) & int(g, base=16))
+        return '{:0b}'.format(ch).zfill(self.wordSize)[-self.wordSize:]
+    
+    
+    def _get_maj(self, a, b, c):
+        ''' Return the the maj value of a, b, c '''
+        maj = (int(a, base=16) & int(b, base=16)) ^ (int(a, base=16) & int(c, base=16)) ^ (int(b, base=16) & int(c, base=16))
+        return '{:0b}'.format(maj).zfill(self.wordSize)[-self.wordSize:] 
 
 
     def _add_compressed_chunk_to_current_hash_value(self, wh):
@@ -286,7 +337,9 @@ class SHA256(ABC):
                     List containing the current hash values
       
             '''
-        pass
+        for index in range(len(self.h)):
+            value = int(self.h[index], base=16) + int(wh[index], base=16)
+            self.h[index] = '{:0x}'.format(value).zfill(self.hexWordLen)[-self.hexWordLen:]
 
 
     def _produce_final_hash(self):
@@ -298,7 +351,11 @@ class SHA256(ABC):
                     Hash of the message
 
             '''
-        hashedMessage = None
+        hashedMessage = ''
+
+        for h in self.h:
+            hashedMessage += h
+
         return hashedMessage 
 
 
@@ -328,6 +385,8 @@ class SHA512(SHA256):
         self.blockSize = 1024
         self.wordSize = 64
         self.nbCompressions = 80
+
+        self.hexWordLen = int(self.wordSize/4)
         
         self._initialize_hash_values()
         self._initialize_round_constants()
@@ -335,8 +394,8 @@ class SHA512(SHA256):
 
     def _initialize_hash_values(self):
         ''' Initialize the hash values h0 to h7 '''
-        self.h = [  0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1, 
-                    0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179]
+        self.h = [  '6a09e667f3bcc908', 'bb67ae8584caa73b', '3c6ef372fe94f82b', 'a54ff53a5f1d36f1', 
+                    '510e527fade682d1', '9b05688c2b3e6c1f', '1f83d9abfb41bd6b', '5be0cd19137e2179']
 
     
     def _initialize_round_constants(self):
@@ -361,14 +420,26 @@ class SHA512(SHA256):
 
     def _get_sigma0(self, word):
         ''' Return the the sigma0 value of the word '''
-        word = int(self._rightrotate(word, 1), base=2) ^ int(self._rightrotate(word, 8), base=2) ^ int(self._rightshift(word, 7), base=2)
-        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+        sigma0 = int(self._rightrotate(word, 1), base=2) ^ int(self._rightrotate(word, 8), base=2) ^ int(self._rightshift(word, 7), base=2)
+        return '{:0b}'.format(sigma0).zfill(self.wordSize)[-32:]
 
 
     def _get_sigma1(self, word):
-        ''' Return the the sigma0 value of the word '''
-        word = int(self._rightrotate(word, 19), base=2) ^ int(self._rightrotate(word, 61), base=2) ^ int(self._rightshift(word, 6), base=2)
-        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+        ''' Return the the sigma1 value of the word '''
+        sigma1 = int(self._rightrotate(word, 19), base=2) ^ int(self._rightrotate(word, 61), base=2) ^ int(self._rightshift(word, 6), base=2)
+        return '{:0b}'.format(sigma1).zfill(self.wordSize)[-32:]
+
+
+    def _get_Sigma0(self, a):
+        ''' Return the the Sigma0 value of a '''
+        Sigma0 = int(self._rightrotate(a, 28), base=2) ^ int(self._rightrotate(a, 34), base=2) ^ int(self._rightrotate(a, 39), base=2)
+        return '{:0b}'.format(Sigma0).zfill(self.wordSize)[-self.wordSize:]
+
+
+    def _get_Sigma1(self, e):
+        ''' Return the the Sigma1 value of e '''
+        Sigma1 = int(self._rightrotate(e, 14), base=2) ^ int(self._rightrotate(e, 18), base=2) ^ int(self._rightrotate(e, 41), base=2)
+        return '{:0b}'.format(Sigma1).zfill(self.wordSize)[-self.wordSize:]
 
 
 
@@ -378,12 +449,13 @@ class SHA512(SHA256):
 
 if __name__ == '__main__':
     hashMethod = SHA256()
-    hashValue = hashMethod.get_hash('testtesttesttesttest')
+    hashValue = hashMethod.get_hash('')
     print(hashValue)
+    print('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
 
-    # a = 60
-    # b = 18
-    # c = a | b
-    # print('{:0b}'.format(a).zfill(8))
-    # print('{:0b}'.format(b).zfill(8))
-    # print('{:0b}'.format(c).zfill(8))
+    hashMethod = SHA512()
+    hashValue = hashMethod.get_hash('')
+    print(hashValue)
+    print('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e')
+
+    
