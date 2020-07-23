@@ -122,7 +122,7 @@ class SHA256(ABC):
             '''
         # Convert string to hex
         message = "".join("{:02x}".format(ord(c)) for c in message)
-        
+
         initLen = len(message)
         message += '1'
         
@@ -149,7 +149,14 @@ class SHA256(ABC):
                     List of (block size) bits chunks
 
             '''
-        chunks = []
+        nbOfChunks = len(message) // self.blockSize
+        
+        chunks = ['' for _ in range(nbOfChunks)]
+        for index in range(nbOfChunks):
+            startIndex = index * self.blockSize
+            endIndex = (index + 1) * self.blockSize
+            chunks[index] = message[startIndex:endIndex]
+
         return chunks
 
 
@@ -168,7 +175,18 @@ class SHA256(ABC):
                     List of (word-size) bites words
 
             '''
-        words = []
+        words = ['' for _ in range(self.nbCompressions)]
+
+        for index in range(16):
+            startIndex = index * self.wordSize
+            endIndex = (index + 1) * self.wordSize
+            words[index] = chunk[startIndex:endIndex]
+            
+        for index in range(16):
+            pass
+
+        print(words)
+
         return words
 
 
@@ -181,7 +199,7 @@ class SHA256(ABC):
                     List containing the current hash values
 
             '''
-        wh = []
+        _ = wh = self.h
         return wh
 
 
