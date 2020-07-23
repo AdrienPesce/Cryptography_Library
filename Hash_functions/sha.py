@@ -121,7 +121,7 @@ class SHA256(ABC):
 
             '''
         # Convert string to hex
-        message = "".join("{:02x}".format(ord(c)) for c in message)
+        message = "".join("{:0b}".format(ord(c)) for c in message)
 
         initLen = len(message)
         message += '1'
@@ -130,7 +130,7 @@ class SHA256(ABC):
         for _ in range(0, bytesToAdd):
             message += '0'
 
-        message += '{:0x}'.format(initLen).zfill(64)
+        message += '{:0b}'.format(initLen).zfill(64)
 
         return message
 
