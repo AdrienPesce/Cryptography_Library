@@ -182,12 +182,67 @@ class SHA256(ABC):
             endIndex = (index + 1) * self.wordSize
             words[index] = chunk[startIndex:endIndex]
             
-        for index in range(16):
-            pass
-
-        print(words)
+        for index in range(16, self.nbCompressions):
+            sigma0 = self._get_sigma0(words[index - 15])
+            sigma1 = self._get_sigma1(words[index - 2])
+            word = int(words[index-16], base=2) + int(sigma0, base=2) + int(words[index-7], base=2) + int(sigma1, base=2)
+            words[index] = '{:0b}'.format(word).zfill(self.wordSize)[-32:]
 
         return words
+
+    
+    def _get_sigma0(self, word):
+        ''' Return the the sigma0 value of the word '''
+        word = int(self._rightrotate(word, 7), base=2) ^ int(self._rightrotate(word, 18), base=2) ^ int(self._rightshift(word, 3), base=2)
+        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+
+
+    def _get_sigma1(self, word):
+        ''' Return the the sigma0 value of the word '''
+        word = int(self._rightrotate(word, 17), base=2) ^ int(self._rightrotate(word, 19), base=2) ^ int(self._rightshift(word, 10), base=2)
+        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+
+
+    def _rightshift(self, word, n):
+        ''' Return the n time right shifted word
+
+            Parameters
+            ----------
+                word : string
+                    word to shift
+                n : int
+                    number of shifts to do
+
+            Returns
+            -------
+                word : string
+                    word shifted n times
+
+            '''
+        word = int(word, base=2)
+        word = word >> n
+        return '{:0b}'.format(word).zfill(self.wordSize)
+
+
+    def _rightrotate(self, word, n):
+        ''' Return the n time right rotated word
+
+            Parameters
+            ----------
+                word : string
+                    word to rotate
+                n : int
+                    number of rotations to do
+
+            Returns
+            -------
+                word : string
+                    word rotated n times
+
+            '''
+        word = int(word, base=2)
+        word = (word >> n) | (word << (self.wordSize - n))
+        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
 
 
     def _get_working_variables(self):
@@ -304,6 +359,18 @@ class SHA512(SHA256):
                     0x431d67c49c100d4c, 0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817]
 
 
+    def _get_sigma0(self, word):
+        ''' Return the the sigma0 value of the word '''
+        word = int(self._rightrotate(word, 1), base=2) ^ int(self._rightrotate(word, 8), base=2) ^ int(self._rightshift(word, 7), base=2)
+        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+
+
+    def _get_sigma1(self, word):
+        ''' Return the the sigma0 value of the word '''
+        word = int(self._rightrotate(word, 19), base=2) ^ int(self._rightrotate(word, 61), base=2) ^ int(self._rightshift(word, 6), base=2)
+        return '{:0b}'.format(word).zfill(self.wordSize)[-32:]
+
+
 
 # ################################################################################################################################
 # 		 Main
@@ -313,3 +380,10 @@ if __name__ == '__main__':
     hashMethod = SHA256()
     hashValue = hashMethod.get_hash('testtesttesttesttest')
     print(hashValue)
+
+    # a = 60
+    # b = 18
+    # c = a | b
+    # print('{:0b}'.format(a).zfill(8))
+    # print('{:0b}'.format(b).zfill(8))
+    # print('{:0b}'.format(c).zfill(8))
