@@ -122,7 +122,7 @@ class SHA256(ABC):
                     Message to get the hash of with a lentgh equal to a multiple of the block size
 
             '''
-        # Convert string to hex
+        # Convert string to bin
         message = "".join("{:0b}".format(ord(c)) for c in message)
 
         initLen = len(message)
@@ -399,7 +399,7 @@ class SHA512(SHA256):
 
     
     def _initialize_round_constants(self):
-        ''' Initialize the round constants K0 to K63 '''
+        ''' Initialize the round constants K0 to K79 '''
         self.k = [  0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc, 0x3956c25bf348b538, 
                     0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118, 0xd807aa98a3030242, 0x12835b0145706fbe, 
                     0x243185be4ee4b28c, 0x550c7dc3d5ffb4e2, 0x72be5d74f27b896f, 0x80deb1fe3b1696b1, 0x9bdc06a725c71235, 
@@ -458,4 +458,3 @@ if __name__ == '__main__':
     print(hashValue)
     print('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e')
 
-    
